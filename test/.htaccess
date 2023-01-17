@@ -1,5 +1,5 @@
-Require all denied
-Require ip 127.0.0.1
+#Require all denied
+#Require ip 127.0.0.1
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.+)$ index.php [NC,QSA,L]
