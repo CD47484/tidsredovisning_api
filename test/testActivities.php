@@ -162,13 +162,13 @@ function test_UppdateraAktivitet(): string {
     try{
     //testa uppdatera med ny text i aktivitet
     $db=connectDb();
-    $db->beginTransaction();
-    $nyPost=sparaNy("Nizze");
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
-    $uppdateringsId=(int) $nyPost->getContent()->id;
-    $svar=uppdatera($uppdateringsId, "Pelle");
+    $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, "Pelle");  // Prova att uppdatera
     if($svar->getStatus()===200 && $svar->getContent()->result===true) {
         $retur .="<p class='ok'>Uppdatera aktivitet lyckades</p>";
     } else {
@@ -181,16 +181,88 @@ function test_UppdateraAktivitet(): string {
         $retur .="</p>";
     }
     $db->rollBack();
-    //Testa uppdatera med samma text i aktivitet
 
+    //Testa uppdatera med samma text i aktivitet
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    if($nyPost->getStatus()!==200) {
+        throw new Exception("Skapa ny post misslyckades", 10001);
+    }
+    $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, "Nizze");  // Prova att uppdatera
+    if($svar->getStatus()===200 && $svar->getContent()->result===false) {
+        $retur .="<p class='ok'>Uppdatera aktivitet med samma text lyckades</p>";
+    } else {
+        $retur .="<p class='error'>Uppdatera aktivitet med samma text misslyckades "; 
+        if(isset($svar->getContent()->result)) { 
+        $retur .=var_export($svar->getContent()->result). " returnerades istället för förväntat 'false'";
+        } else {
+            $retur .="{$svar->getstatus()} returnerades istället för förväntat 200";
+        }
+        $retur .="</p>";
+    }
+    $db->rollBack();
 
     //Testa med tom aktivitet
-
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    if($nyPost->getStatus()!==200) {
+        throw new Exception("Skapa ny post misslyckades", 10001);
+    }
+    $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, "");  // Prova att uppdatera
+    if($svar->getStatus()===400) {
+        $retur .="<p class='ok'>Uppdatera aktivitet med tom misslyckades som förväntat</p>";
+    } else {
+        $retur .="<p class='error'>Uppdatera aktivitet med tom returnerade "
+        . "{$svar->getstatus()} istället för förväntat 400</p>"; 
+    }
+    $db->rollBack();
 
     //testa med ogiltigt id(-1)
-
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $uppdateringsId= -1; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, "Test");  // Prova att uppdatera
+    if($svar->getStatus()===400) {
+        $retur .="<p class='ok'>Uppdatera aktivitet med ogiltigt id (-1) misslyckades som förväntat</p>";
+    } else {
+        $retur .="<p class='error'>Uppdatera aktivitet med ogiltigt id (-1) returnerade "
+        . "{$svar->getstatus()} istället för förväntat 400</p>"; 
+    }
+    $db->rollBack();
 
     //testa med obefintligt id(100)
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $uppdateringsId= 100; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, "Test");  // Prova att uppdatera
+    if($svar->getStatus()===200 && $svar->getContent()->result===false) {
+        $retur .="<p class='ok'>Uppdatera aktivitet med obefintligt id (100) misslyckades som förväntat</p>";
+    } else {
+        $retur .="<p class='error'>Uppdatera aktivitet med obefintligtogiltigt id (100) returnerade ";
+        if(isset($svar->getContent()->result)) { 
+            $retur .=var_export($svar->getContent()->result). " returnerades istället för förväntat 'false'";
+            } else {
+                $retur .="{$svar->getstatus()} returnerades istället för förväntat 200";
+            }
+            $retur .="</p>";
+    }
+    $db->rollBack();
+
+     //Testa cipis bugg - testa med mellanslag som aktivitet
+    $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
+    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    if($nyPost->getStatus()!==200) {
+        throw new Exception("Skapa ny post misslyckades", 10001);
+    }
+    $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
+    $svar=uppdatera($uppdateringsId, " ");  // Prova att uppdatera
+    if($svar->getStatus()===400) {
+        $retur .="<p class='ok'>Uppdatera aktivitet med mellanslag lyckades som förväntat</p>";
+    } else {
+        $retur .="<p class='error'>Uppdatera aktivitet med mellanslag returnerade "
+        . "{$svar->getstatus()} istället för förväntat 400</p>"; 
+    }
+    $db->rollBack();
 
     } catch (Exception $ex) {
         $db->rollBack();

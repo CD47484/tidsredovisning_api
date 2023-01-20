@@ -97,8 +97,8 @@ function hamtaEnskild(int $id): Response {
  */
 function sparaNy(string $aktivitet): Response {
     //kontrollera indata
-    $kontrolleraAktivitet=filter_var($aktivitet, FILTER_SANITIZE_ENCODED);
-    $kontrolleraAktivitet=trim($kontrolleraAktivitet);
+    $kontrolleraAktivitet=trim($aktivitet);
+    $kontrolleraAktivitet=filter_var($kontrolleraAktivitet, FILTER_SANITIZE_ENCODED);
     if($kontrolleraAktivitet==="") {
         $out=new stdClass();
         $out->error=["Fel vid spara", "activity kan inte vara tom"];
@@ -145,8 +145,8 @@ function uppdatera(int $id, string $aktivitet): Response {
         $out->error=["Felaktig indata","$id är inget heltal"];
         return new Response($out,400);
     }
-    $kontrolleraAktivitet=filter_var($aktivitet, FILTER_SANITIZE_ENCODED);
-    $kontrolleraAktivitet=trim($kontrolleraAktivitet);
+    $kontrolleraAktivitet=trim($aktivitet);
+    $kontrolleraAktivitet=filter_var($kontrolleraAktivitet, FILTER_SANITIZE_ENCODED);
     if($kontrolleraAktivitet==="") {
         $out=new stdClass();
         $out->error=["Fel vid uppdatera", "activity kan inte vara tom"];
