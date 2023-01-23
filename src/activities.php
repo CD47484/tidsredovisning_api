@@ -10,6 +10,7 @@ require_once __DIR__ .'/funktioner.php';
  * @return Response
  */
 function activities(Route $route, array $postData): Response {
+ //   var_dump($route, $postData);
     try {
         if (count($route->getParams()) === 0 && $route->getMethod() === RequestMethod::GET) {
             return hamtaAlla();
@@ -17,7 +18,7 @@ function activities(Route $route, array $postData): Response {
         if (count($route->getParams()) === 1 && $route->getMethod() === RequestMethod::GET) {
             return hamtaEnskild((int) $route->getParams()[0]);
         }
-        if (isset($postdata["activity"]) && (count($route->getParams()) === 0 && $route->getMethod()) === RequestMethod::POST) {
+        if (isset($postData["activity"]) && (count($route->getParams()) === 0 && $route->getMethod() === RequestMethod::POST)) {
             return sparaNy((string) $postData["activity"]);
         }
         if (count($route->getParams()) === 1 && $route->getMethod() === RequestMethod::PUT) {
@@ -175,7 +176,7 @@ function uppdatera(int $id, string $aktivitet): Response {
         return new Response($out,200);
     } catch(exception $ex) {
         $out=new stdClass();
-        $out->error=["Något gick fel vid spara", $ex->getMessage()];
+        $out->error=["Något gick fel vid uppdatera", $ex->getMessage()];
         return new Response($out,400);
     }
 }
@@ -185,5 +186,38 @@ function uppdatera(int $id, string $aktivitet): Response {
  * @return Response
  */
 function radera(int $id): Response {
-    return new Response("Raderar aktivitet $id", 200);
+    //Kontrollera id
+    $kollatID=filter_var($id,FILTER_VALIDATE_INT);
+    if(!$kollatID || $kollatID<1){
+        $out=new stdClass();
+        $out->error=["Felaktigt id","$id är inget giltigt heltal"];
+        return new Response($out,400);
+    }
+
+    try{
+    //Koppla mot databas
+    $db=connectdb();
+    
+    //Skicka radera-kommando
+    $stmt=$db->prepare("DELETE FROM kategorier"
+        ." WHERE id=:id");
+    $stmt->execute(["id" => $kollatID]);
+    $antalPoster=$stmt->rowCount();
+    //Kontrollera databas-svar och skapa utdata-svar
+    $out=new stdClass();
+    if($antalPoster>0) {
+        $out->result=true;
+        $out->message=["Radera lyckades", "$antalPoster post(er) raderades"];
+    } else {
+        $out->result=false;
+        $out->message=["Radera misslyckades", "Inga poster raderades"];
+    }
+    
+
+    return new Response($out);
+    } catch(exception $ex) {
+        $out=new stdClass();
+        $out->error=["Något gick fel vid radera", $ex->getMessage()];
+        return new Response($out,400);
+}
 }

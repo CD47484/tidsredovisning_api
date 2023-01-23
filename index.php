@@ -20,7 +20,7 @@ if (count($_POST) > 0) {
 
 // Hämta ruttinformation
 $route = getRoute($uri, $metod);
-var_dump($route->getRoute());
+//var_dump($route->getRoute());
 // Hantera ruttinformationen
 switch ($route->getRoute()) {
     case "/activity/":
