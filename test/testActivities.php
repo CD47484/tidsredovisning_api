@@ -10,7 +10,7 @@ require_once'../src/activities.php';
 function allaActivityTester(): string {
     // Kom ihåg att lägga till alla funktioner i filen!
     $retur = "";
-    $retur .= test_HamtaAllaAktiviteter();
+    $retur .= test_hamtaAllaAktiviteter();
     $retur .= test_HamtaEnAktivitet();
     $retur .= test_SparaNyAktivitet();
     $retur .= test_UppdateraAktivitet();
@@ -36,10 +36,10 @@ function testActivityFunction(string $funktion): string {
  * Tester för funktionen hämta alla aktiviteter
  * @return string html-sträng med alla resultat för testerna 
  */
-function test_HamtaAllaAktiviteter(): string {
-    $retur = "<h2>test_HamtaAllaAktiviteter</h2>";
+function test_hamtaAllaAktiviteter(): string {
+    $retur = "<h2>test_hamtaAllaAktiviteter</h2>";
     try {
-        $svar=hamtaAlla();
+        $svar=hamtaAllaAktiviteter();
 
         //kontrollerar statuskoden
         if(!$svar->getStatus()===200){
@@ -49,9 +49,14 @@ function test_HamtaAllaAktiviteter(): string {
         }
     
         //kontrollerar att ingen aktivitet är tom
-        foreach ($svar->getContent() as $kategori) {
-            if($kategori->kategori===""){
-                $retur .="<p class='error'<Tom aktivitet</p>";
+        foreach ($svar->getContent()->activities as $aktivitet) {
+            if(!isset($aktivitet->id)){
+                $retur .="<p class='error'>Egenskapen id saknas</p>";
+                break;
+            }
+            if(!isset($aktivitet->activity)){
+                $retur .="<p class='error'>Egenskapen activity saknas</p>";
+                break;
             }
         
         }
@@ -71,7 +76,7 @@ function test_HamtaEnAktivitet(): string {
     $retur = "<h2>test_HamtaEnAktivitet</h2>";
     try {
         //Testa negativt tal
-        $svar= hamtaEnskild(-1);
+        $svar= hamtaEnskildAktivitet(-1);
         if($svar->getStatus()===400) {
             $retur .="<p class='ok'>Hämta enskild med negativt tal ger förväntat svar 400</p>";
         } else {
@@ -79,7 +84,7 @@ function test_HamtaEnAktivitet(): string {
             ."inte förväntat svar 400</p>";
         }
         //Testa för stort tal
-        $svar= hamtaEnskild(100);
+        $svar= hamtaEnskildAktivitet(100);
         if($svar->getStatus()===400) {
             $retur .="<p class='ok'>Hämta enskild med för stort tal ger förväntat svar 400</p>";
         } else {
@@ -87,7 +92,7 @@ function test_HamtaEnAktivitet(): string {
             ."inte förväntat svar 400</p>";
         }
         //Testa bokstäver
-        $svar= hamtaEnskild((int)"sju");
+        $svar= hamtaEnskildAktivitet((int)"sju");
         if($svar->getStatus()===400) {
             $retur .="<p class='ok'>Hämta enskild med bokstäver ger förväntat svar 400</p>";
         } else {
@@ -95,7 +100,7 @@ function test_HamtaEnAktivitet(): string {
             ."inte förväntat svar 400</p>";
         }
         //Testa giltigt tal
-        $svar= hamtaEnskild(2);
+        $svar= hamtaEnskildAktivitet(2);
         if($svar->getStatus()===200) {
             $retur .="<p class='ok'>Hämta enskild med 2 ger förväntat svar 200</p>";
         } else {
@@ -119,7 +124,7 @@ function test_SparaNyAktivitet(): string {
 
     //testa tom aktivitet
     $aktivitet="";
-    $svar=sparaNy($aktivitet);
+    $svar=sparaNyAktivitet($aktivitet);
     if($svar->getStatus()===400) {
         $retur .="<p class='ok'>Spara tom aktivitet misslyckades som förväntat</p>";
     } else {
@@ -130,7 +135,7 @@ function test_SparaNyAktivitet(): string {
     $db=connectDb();
     $db->beginTransaction();
     $aktivitet="Nizze";
-    $svar= sparaNy($aktivitet);
+    $svar= sparaNyAktivitet($aktivitet);
     if($svar->getStatus()===200){
         $retur .="<p class='ok'>Spara aktivitet misslyckades som förväntat</p>";
     } else {
@@ -141,8 +146,8 @@ function test_SparaNyAktivitet(): string {
     //testa lägg till samma
     $db->beginTransaction();
     $aktivitet="Nizze";
-    $svar= sparaNy($aktivitet); //Spara första gågnen, borde lyckas
-    $svar= sparaNy($aktivitet); //Faktiskst test, funkar det andra gången
+    $svar= sparaNyAktivitet($aktivitet); //Spara första gågnen, borde lyckas
+    $svar= sparaNyAktivitet($aktivitet); //Faktiskst test, funkar det andra gången
     if($svar->getStatus()===400){ 
         $retur .="<p class='ok'>Spara aktivitet två gånger misslyckades som förväntat</p>";
     } else {
@@ -163,12 +168,12 @@ function test_UppdateraAktivitet(): string {
     //testa uppdatera med ny text i aktivitet
     $db=connectDb();
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
-    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    $nyPost=sparaNyAktivitet("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
     $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, "Pelle");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, "Pelle");  // Prova att uppdatera
     if($svar->getStatus()===200 && $svar->getContent()->result===true) {
         $retur .="<p class='ok'>Uppdatera aktivitet lyckades</p>";
     } else {
@@ -184,12 +189,12 @@ function test_UppdateraAktivitet(): string {
 
     //Testa uppdatera med samma text i aktivitet
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
-    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    $nyPost=sparaNyAktivitet("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
     $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, "Nizze");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, "Nizze");  // Prova att uppdatera
     if($svar->getStatus()===200 && $svar->getContent()->result===false) {
         $retur .="<p class='ok'>Uppdatera aktivitet med samma text lyckades</p>";
     } else {
@@ -205,12 +210,12 @@ function test_UppdateraAktivitet(): string {
 
     //Testa med tom aktivitet
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
-    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    $nyPost=sparaNyAktivitet("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
     $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, "");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, "");  // Prova att uppdatera
     if($svar->getStatus()===400) {
         $retur .="<p class='ok'>Uppdatera aktivitet med tom misslyckades som förväntat</p>";
     } else {
@@ -222,7 +227,7 @@ function test_UppdateraAktivitet(): string {
     //testa med ogiltigt id(-1)
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
     $uppdateringsId= -1; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, "Test");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, "Test");  // Prova att uppdatera
     if($svar->getStatus()===400) {
         $retur .="<p class='ok'>Uppdatera aktivitet med ogiltigt id (-1) misslyckades som förväntat</p>";
     } else {
@@ -234,7 +239,7 @@ function test_UppdateraAktivitet(): string {
     //testa med obefintligt id(100)
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
     $uppdateringsId= 100; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, "Test");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, "Test");  // Prova att uppdatera
     if($svar->getStatus()===200 && $svar->getContent()->result===false) {
         $retur .="<p class='ok'>Uppdatera aktivitet med obefintligt id (100) misslyckades som förväntat</p>";
     } else {
@@ -250,12 +255,12 @@ function test_UppdateraAktivitet(): string {
 
      //Testa cipis bugg - testa med mellanslag som aktivitet
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
-    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    $nyPost=sparaNyAktivitet("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
     $uppdateringsId=(int) $nyPost->getContent()->id; // Den nya postens id
-    $svar=uppdatera($uppdateringsId, " ");  // Prova att uppdatera
+    $svar=uppdateraAktivitet($uppdateringsId, " ");  // Prova att uppdatera
     if($svar->getStatus()===400) {
         $retur .="<p class='ok'>Uppdatera aktivitet med mellanslag lyckades som förväntat</p>";
     } else {
@@ -283,7 +288,7 @@ function test_RaderaAktivitet(): string {
     $retur = "<h2>test_RaderaAktivitet</h2>";
 try{
     //Testa felaktigt id(-1)
-    $svar= radera(-1);
+    $svar= raderaAktivitet(-1);
         if($svar->getStatus()===400) {
             $retur .="<p class='ok'>Radera post med negativt tal ger förväntat svar 400</p>";
         } else {
@@ -292,7 +297,7 @@ try{
         }
 
     //Testa felaktigt id(sju)
-    $svar= radera((int)"sju");
+    $svar= raderaAktivitet((int)"sju");
     if($svar->getStatus()===400) {
         $retur .="<p class='ok'>Radera post med felaktigt id ('sju') ger förväntat svar 400</p>";
     } else {
@@ -300,7 +305,7 @@ try{
         ."inte förväntat svar 400</p>";
     }
     //Testa id som inte finns (100)
-    $svar= radera(1000);
+    $svar= raderaAktivitet(1000);
         if($svar->getStatus()===200 && $svar->getContent()->result===false) {
             $retur .="<p class='ok'>Radera post med id som inte finns (1000) ger förväntat svar 200"
             . " inte result=false</p>";
@@ -311,12 +316,12 @@ try{
     //Testa radera nyskapat id
     $db = connectDb();
     $db->beginTransaction(); // Skapa en transaktion för att inte rådda till databasen i onödan
-    $nyPost=sparaNy("Nizze");   // Skapa en ny post som vi kan rådda med
+    $nyPost=sparaNyAktivitet("Nizze");   // Skapa en ny post som vi kan rådda med
     if($nyPost->getStatus()!==200) {
         throw new Exception("Skapa ny post misslyckades", 10001);
     }
     $nyttId=(int) $nyPost->getContent()->id; // Den nya postens id
-    $svar=radera($nyttId);
+    $svar=raderaAktivitet($nyttId);
     if($svar->getStatus()===200 && $svar->getContent()->result===true) {
         $retur .="<p class='ok'>Radera post med nyskapat id ger förväntat svar 200"
         . " inte result=true</p>";
