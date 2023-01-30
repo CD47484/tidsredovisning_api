@@ -183,9 +183,47 @@ function test_HamtaAllaUppgifterDatum(): string {
  */
 function test_HamtaEnUppgift(): string {
     $retur = "<h2>test_HamtaEnUppgift</h2>";
-    $retur .= "<p class='ok'>Testar hämta en uppgift</p>";
+    try {
+        //Testa negativt tal
+        $svar= hamtaEnskildUppgift(-1);
+        if($svar->getStatus()===400) {
+            $retur .="<p class='ok'>Hämta enskild med negativt tal ger förväntat svar 400</p>";
+        } else {
+            $retur .="<p class='error'>Hämta enskild med negativt tal ger {$svar->getStatus()} " 
+            ."inte förväntat svar 400</p>";
+        }
+        //Testa för stort tal
+        $svar= hamtaEnskildUppgift(100);
+        if($svar->getStatus()===400) {
+            $retur .="<p class='ok'>Hämta enskild med för stort tal ger förväntat svar 400</p>";
+        } else {
+            $retur .="<p class='error'>Hämta enskild med för stort (100) tal ger {$svar->getStatus()} " 
+            ."inte förväntat svar 400</p>";
+        }
+        //Testa bokstäver
+        $svar= hamtaEnskildUppgift((int)"sju");
+        if($svar->getStatus()===400) {
+            $retur .="<p class='ok'>Hämta enskild med bokstäver ger förväntat svar 400</p>";
+        } else {
+            $retur .="<p class='error'>Hämta enskild med bokstäver ('sju') ger {$svar->getStatus()} " 
+            ."inte förväntat svar 400</p>";
+        }
+        //Testa giltigt tal
+        $svar= hamtaEnskildUppgift(2);
+        if($svar->getStatus()===200) {
+            $retur .="<p class='ok'>Hämta enskild med 2 ger förväntat svar 200</p>";
+        } else {
+            $retur .="<p class='error'>Hämta enskild med 2 ger {$svar->getStatus()} " 
+            ."inte förväntat svar 200</p>";
+        }
+
+    } catch (Exception $exc) {
+        $retur .="<p class='error'>Något gick fel, meddelandet säger {$exc->getMessage()}</p>";
+    }
+
     return $retur;
 }
+
 
 /**
  * Test för funktionen spara uppgift
