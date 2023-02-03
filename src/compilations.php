@@ -11,7 +11,7 @@ declare (strict_types=1);
 function compilations(Route $route): Response {
     try {
         if (count($route->getParams()) === 2 && $route->getMethod() === RequestMethod::GET) {
-            return hamtaDatum(new DateTimeImmutable($route->getParams()[0]), new DateTimeImmutable($route->getParams()[1]));
+            return hamtaSammanstallning(new DateTimeImmutable($route->getParams()[0]), new DateTimeImmutable($route->getParams()[1]));
         }
     } catch (Exception $exc) {
         return new Response($exc->getMessage(), 400);
@@ -26,6 +26,37 @@ function compilations(Route $route): Response {
  * @param DateTimeInterface $tom
  * @return Response
  */
-function hamtaDatum(DateTimeInterface $from, DateTimeInterface $tom): Response {
-    return new Response("Hämta alla tasks mellan " . $from->format("Y-m-d") . " och " . $tom->format("Y-m-d"), 200);
+function hamtaSammanstallning(DateTimeInterface $from, DateTimeInterface $tom): Response {
+    // Kontrollera indata
+    if ($from > $tom) {
+        $out = new stdClass();
+        $out->error = ["Hämta sammanställning misslyckades", "Till-datum måste vara efter från-datum"];
+        return new Response($out, 400);
+    }
+
+    // Koppla databas
+    $db = connectDb();
+
+    // Förbered och exekvera SQL
+    $stmt = $db->prepare("SELECT Kategori, KategoriId, "
+            . "SEC_TO_TIME(SUM(TIME_TO_SEC(Tid))) as Tid "
+            . "FROM uppgifter t "
+            . "INNER JOIN kategorier a ON a.ID=t.KategoriId "
+            . "WHERE Datum BETWEEN :fran AND :till "
+            . "GROUP BY KategoriId ");
+    $stmt->execute(["fran" => $from->format('Y-m-d'), "till" => $tom->format('Y-m-d')]);
+
+    // Kontrollera svar och generera utdata
+    $poster = [];
+    while ($row = $stmt->fetch()) {
+        $rec = new stdClass();
+        $rec->activityId = $row["KategoriId"];
+        $rec->activity = $row["Kategori"];
+        $rec->time = substr($row["Tid"], 0, 5);
+        $poster[] = $rec;
+    }
+
+    $out = new stdClass();
+    $out->tasks = $poster;
+    return new Response($out);
 }
